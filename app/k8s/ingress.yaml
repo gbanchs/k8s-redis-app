@@ -1,0 +1,50 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:332285027249:certificate/e86ccbc9-c50d-4482-8864-fbded1d9726b
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "30"
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/healthcheck-port: "80"
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healty-threshold-count: "2"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 443}]'
+    alb.ingress.kubernetes.io/load-balancer-attributes: deletion_protection.enabled=false,idle_timeout.timeout_seconds=45
+    alb.ingress.kubernetes.io/load-balancer-name: ingress-${APP_NAME}-${ENV}
+    alb.ingress.kubernetes.io/name: ingress-${APP_NAME}-${ENV}
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/shield-advanced-protection: "true"
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=60,load_balancing.algorithm.type=least_outstanding_requests
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+  name: ingress-${APP_NAME}-${ENV}
+  namespace: default
+spec:
+  defaultBackend:
+    service:
+      name: ${APP_NAME}
+      port:
+        number: 80
+  ingressClassName: alb
+  rules:
+  - host: bluecore.gbanchs.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: ${APP_NAME}
+            port:
+              number: 80
+        path: /read
+        pathType: ImplementationSpecific
+  - host: bluecore.gbanchs.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: ${APP_NAME}
+            port:
+              number: 80
+        path: /write
+        pathType: ImplementationSpecific        
