@@ -6,7 +6,11 @@ export NODE_ENV=$NODE_ENV
 export ENV="${ENV}"
 export NAMESPACE="${NAMESPACE}"
 
+export APP_NAME="bluecore"
+export IMAGE_TAG="v11"
 
+export ENV="demo"
+export NAMESPACE="default"
 
 if [ "$ENV" = "prod" ]; then
     export DOMAIN="${APP_NAME}.gbanchs.com"

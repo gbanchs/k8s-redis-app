@@ -17,7 +17,7 @@ spec:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 3000
+    targetPort: 8000
   selector:
     APP_NAME: ${APP_NAME}-${ENV}
   sessionAffinity: None
