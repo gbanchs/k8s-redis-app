@@ -1,7 +1,3 @@
-Here’s the updated documentation with the inclusion of how to test the API on both **localhost** and on a real domain (`bluecore.gbanchs.com`), as well as the detailed **Terraform Deployment** process:
-
----
-
 # Infra Code Challenge Documentation
 
 This guide explains how to build, test, and deploy the API that increments a counter persisted in Redis, both locally (with Docker Compose) and in a Kubernetes cluster (Minikube). Additionally, it outlines how to deploy infrastructure using Terraform for various environments, starting with the **global environment** for initial setup (such as creating the S3 bucket and DynamoDB table), while allowing customization based on your environment.
