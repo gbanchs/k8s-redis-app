@@ -40,7 +40,7 @@ To test the API locally with Redis, use Docker Compose. The `docker-compose.yml`
 
 2. **Run Docker Compose**:
    ```bash
-   docker-compose up
+   docker-compose up -d
    ```
 
 This will spin up both the API and Redis, with the API accessible on `http://localhost:8000`.
@@ -88,20 +88,17 @@ Ensure Minikube is installed and running:
 Kubernetes YAML manifests are located in the `infra` folder. They include deployment, service, configmap, and ingress definitions for the API and Redis.
 
 #### Steps:
-1. **Navigate to the infra folder**:
+1. **Navigate to the k8s folder**:
    ```bash
-   cd infra
+   cd app/k8s/
    ```
 
 2. **Apply Kubernetes Manifests**:
    Apply the manifests in the following order:
 
    ```bash
-   kubectl apply -f redis-deployment.yaml
-   kubectl apply -f redis-service.yaml
-   kubectl apply -f api-deployment.yaml
-   kubectl apply -f api-service.yaml
-   kubectl apply -f ingress.yaml
+   kubectl apply -f .
+
    ```
 
 3. **Verify the Pods**:
