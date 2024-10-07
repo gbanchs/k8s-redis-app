@@ -45,21 +45,54 @@ To test the API locally with Redis, use Docker Compose. The `docker-compose.yml`
 
 This will spin up both the API and Redis, with the API accessible on `http://localhost:8000`.
 
-### 1.3. Docker AWS Authentication (For AWS ECR)
+### 1.3. Testing Locally on `localhost`
 
-If you're pushing the Docker image to AWS ECR, authenticate Docker to the AWS registry:
+To test the API locally after starting it with Docker Compose:
 
-#### Steps:
-1. **Authenticate Docker to ECR**:
+1. **GET Request to Read the Counter**:
+   Use `curl` or a web browser to read the current counter value:
    ```bash
-   aws ecr get-login-password --region <your-region> | docker login --username AWS --password-stdin <your-aws-account-id>.dkr.ecr.<your-region>.amazonaws.com
+   curl http://localhost:8000/read
    ```
 
-2. **Push the Docker image to ECR**:
-   After building the image, tag and push it to your AWS ECR repository.
+   You should receive a JSON response with the current counter value:
+   ```json
+   {"counter": 0}
+   ```
+
+2. **POST Request to Increment the Counter**:
+   Use `curl` or Postman to increment the counter:
    ```bash
-   docker tag bluecore:latest <your-ecr-repository-url>:latest
-   docker push <your-ecr-repository-url>:latest
+   curl -X POST http://localhost:8000/write
+   ```
+
+   You should receive a JSON response with the updated counter value:
+   ```json
+   {"counter": 1}
+   ```
+
+### 1.4. Testing on the Production Domain (`bluecore.gbanchs.com`)
+
+After deploying the API on Kubernetes with Ingress, the API will be accessible on the domain `bluecore.gbanchs.com`. Here’s how to test the API on the real domain:
+
+1. **GET Request to Read the Counter**:
+   ```bash
+   curl http://bluecore.gbanchs.com/read
+   ```
+
+   Example Response:
+   ```json
+   {"counter": 0}
+   ```
+
+2. **POST Request to Increment the Counter**:
+   ```bash
+   curl -X POST http://bluecore.gbanchs.com/write
+   ```
+
+   Example Response:
+   ```json
+   {"counter": 1}
    ```
 
 ---
@@ -95,10 +128,8 @@ Kubernetes YAML manifests are located in the `infra` folder. They include deploy
 
 2. **Apply Kubernetes Manifests**:
    Apply the manifests in the following order:
-
    ```bash
    kubectl apply -f .
-
    ```
 
 3. **Verify the Pods**:
@@ -147,7 +178,7 @@ To deploy the application in different environments, update the values in the `s
 
 ---
 
-## 4. Terraform Deployment (for AWS infrastructure)
+## 4. Terraform Deployment (for AWS Infrastructure)
 
 The `infra` folder includes a fully structured Terraform setup to create infrastructure for different environments such as VPC, EKS cluster, Redis, and other components. The **global environment** is used to set up the initial infrastructure, such as the S3 bucket for Terraform state and the DynamoDB table for Terraform locking.
 
@@ -235,7 +266,9 @@ To create a new environment, duplicate the working environment folder (e.g., `de
        name = "app-repo"
        lifecycle_policy = {
          rulePriority = 1
-         description  = "Keep last 10 images"
+         description  = "Keep
+
+ last 10 images"
          countNumber  = 10
        }
        repository_read_write_arns = ["arn:aws:iam::111111111111:role/app-role"]
@@ -254,9 +287,7 @@ To create a new environment, duplicate the working environment folder (e.g., `de
 
 ### 4.4. Custom Resource Creation Configuration
 
-In the base module, you can define whether
-
- to create certain resources (VPC, EKS cluster, Redis, etc.) with the following variables in the `vars.tf`:
+In the base module, you can define whether to create certain resources (VPC, EKS cluster, Redis, etc.) with the following variables in the `vars.tf`:
 
 ```hcl
 creation_config = {
@@ -272,17 +303,7 @@ If needed, you can share an EKS or Redis cluster across environments to save cos
 
 ---
 
-## 5. CI/CD Pipeline Integration
-
-For the final deployment, the CI/CD pipeline (e.g., GitHub Actions, Bitbucket, or Jenkins) should perform the following steps:
-
-1. **Run the `setenvs.sh` script** to dynamically replace environment values in the Kubernetes manifests.
-2. **Authenticate Docker with AWS ECR** and push the image for each environment.
-3. **Deploy to the target Kubernetes cluster** using `kubectl` commands or Helm.
-
----
-
-## Scaling and High Availability (HA) Configurations
+## 5. Scaling and High Availability (HA) Configurations
 
 To ensure high availability (HA) and efficient scaling for the application deployed on Amazon EKS, several components and configurations are in place:
 
@@ -304,46 +325,44 @@ The **Cluster Proportional Autoscaler** is available but disabled by default. It
 ### 6. Redis Clustering
 The Redis setup utilizes **Redis Cluster Mode**, which allows for data distribution across multiple nodes and shards. This ensures high availability and data redundancy. Additionally, the Redis instances are spread across three availability zones in the `us-west-2` region (a, b, c), providing enhanced resilience and fault tolerance.
 
-- **Horizontal Pod Autoscaler (HPA)**: Kubernetes can automatically scale the number of API pods based on CPU usage or other metrics.
-  ```bash
-  kubectl autoscale deployment api-deployment --cpu-percent=50 --min=1 --max=10
-  ```
+---
 
+## 6. Security Considerations
 
-## Security Considerations
 ### 1. Principle of Least Privilege
 For all AWS resources and services used in this deployment, we adhere to the principle of least privilege. This approach ensures that each resource has only the permissions necessary to perform its designated functions, thereby minimizing security risks.
 
 ### 2. Service Accounts and IAM Roles
-The application is associated with a Kubernetes Service Account named sa-bluecore-demo. This service account has an IAM role assigned that provides the required permissions to interact with AWS resources. If the application needs to access additional AWS services in the future, the IAM role associated with this service account can be modified to grant the necessary permissions while still following the least privilege principle.
+The application is associated with a Kubernetes Service Account named `sa-bluecore-demo`. This service account has an IAM role assigned that provides the required permissions to interact with AWS resources. If the application needs to access additional AWS services in the future, the IAM role associated with this service account can be modified to grant the necessary permissions while still following the least privilege principle.
 
 ### 3. Encryption with KMS
-Almost all sensitive data within the infrastructure is encrypted using AWS Key Management Service (KMS). This includes:
+Almost all sensitive data within the infrastructure is encrypted using **AWS Key Management Service (KMS)**. This includes:
+- Data at rest (e.g., EBS volumes, S3 buckets).
+- Secrets stored in **Kubernetes Secrets**, ensuring that sensitive information is protected.
 
-Data at rest (e.g., EBS volumes, S3 buckets).
-Secrets stored in Kubernetes Secrets, ensuring that sensitive information is protected.
 ### 4. Kubernetes Secrets Management
-Kubernetes Secrets are utilized to manage sensitive information within the cluster. In this deployment, secrets are populated from AWS Secrets Manager using an external secret provider. The setup uses the Kubernetes External Secrets project, which integrates with AWS Secrets Manager to create Kubernetes Secrets automatically based on defined configurations.
+Kubernetes Secrets are utilized to manage sensitive information within the cluster. In this deployment, secrets are populated from **AWS Secrets Manager** using an external secret provider. The setup uses the [Kubernetes External Secrets](https://github.com/external-secrets/kubernetes-external-secrets) project, which integrates with AWS Secrets Manager to create Kubernetes Secrets automatically based on defined configurations.
 
-### Integration Steps:
-Terraform Module Creation: Secrets are created in Terraform during the setup of the redis-cluster module. This ensures that all secrets required by the Redis instances and the application are created consistently and securely.
-External Secret Provider: The Kubernetes External Secrets controller synchronizes secrets from AWS Secrets Manager into Kubernetes, allowing the application to consume these secrets directly without hardcoding them in the application code.
+#### Integration Steps:
+1. **Terraform Module Creation**: Secrets are created in Terraform during the setup of the `redis-cluster` module. This ensures that all secrets required by the Redis instances and the application are created consistently and securely.
+2. **External Secret Provider**: The Kubernetes External Secrets controller synchronizes secrets from AWS Secrets Manager into Kubernetes, allowing the application to consume these secrets directly without hardcoding them in the application code.
+
 ### 5. Port and Network Security
-The application and Redis instances are deployed in private subnets, ensuring they are not directly exposed to the internet. All security groups are connected using Redis and nodes' security groups, in addition to the default node security group created by the EKS module.
+The application and Redis instances are deployed in **private subnets**, ensuring they are not directly exposed to the internet. All security groups are connected using Redis and nodes' security groups, in addition to the default node security group created by the EKS module.
 
-Ingress Configuration: The public exposure of the application is managed through an Ingress controller that matches the path and domain for traffic routing. This provides controlled access to the application while keeping the backend services secured.
+- **Ingress Configuration**: The public exposure of the application is managed through an **Ingress controller** that matches the path and domain for traffic routing. This provides controlled access to the application while keeping the backend services secured.
 
-Redis Authentication: Redis is configured with AUTH to enforce authentication for clients attempting to connect, adding an additional layer of security.
+- **Redis Authentication**: Redis is configured with **AUTH** to enforce authentication for clients attempting to connect, adding an additional layer of security.
 
 ### 6. AWS Shield Advanced Protection
-The Load Balancer used for the application has AWS Shield Advanced protection enabled, providing enhanced security against DDoS attacks and other malicious activities. Deletion protection is also enabled to prevent accidental removal of critical resources.
+The Load Balancer used for the application has **AWS Shield Advanced** protection enabled, providing enhanced security against DDoS attacks and other malicious activities. **Deletion protection** is also enabled to prevent accidental removal of critical resources.
 
 ### 7. Future Security Enhancements
-To further enhance security and mitigate risks of DDoS attacks, plans are in place to integrate AWS WAF (Web Application Firewall). This will provide an additional layer of protection by allowing you to create custom rules to filter out unwanted traffic and protect the application from common web exploits.
+To further enhance security and mitigate risks of DDoS attacks, plans are in place to integrate **AWS WAF (Web Application Firewall)**. This will provide an additional layer of protection by allowing you to create custom rules to filter out unwanted traffic and protect the application from common web exploits.
 
 ---
 
-## Future Enhancements
+## 7. Future Enhancements
 
 ### 1. Monitoring
 To ensure the application runs smoothly and efficiently, monitoring will be implemented using **Grafana** and **Prometheus**:
@@ -364,6 +383,4 @@ To automate the deployment process for both the Terraform infrastructure and the
   - Building Docker images.
   - Pushing images to AWS ECR.
   - Deploying the application to the Kubernetes cluster using Helm or kubectl commands.
-  
-
 
