@@ -62,6 +62,71 @@ If you're pushing the Docker image to AWS ECR, authenticate Docker to the AWS re
    docker push <your-ecr-repository-url>:latest
    ```
 
+
+### 1.2. Test the API Locally with Docker Compose
+
+To test the API locally with Redis, use Docker Compose. The `docker-compose.yml` is located in the `app` folder.
+
+#### Steps:
+1. **Navigate to the app folder**:
+   ```bash
+   cd app
+   ```
+
+2. **Run Docker Compose**:
+   ```bash
+   docker-compose up -d
+   ```
+
+This will spin up both the API and Redis, with the API accessible on `http://localhost:8000`.
+
+
+3. **GET Request to Read the Counter**:
+   Use `curl` or a web browser to read the current counter value:
+   ```bash
+   curl http://localhost:8000/read
+   ```
+
+   You should receive a JSON response with the current counter value:
+   ```json
+   {"counter": 0}
+   ```
+
+4. **POST Request to Increment the Counter**:
+   Use `curl` or Postman to increment the counter:
+   ```bash
+   curl -X POST http://localhost:8000/write
+   ```
+
+   You should receive a JSON response with the updated counter value:
+   ```json
+   {"counter": 1}
+   ```
+
+### 1.3. Testing on the Production Domain (`bluecore.gbanchs.com`)
+
+After deploying the API on Kubernetes with Ingress, the API will be accessible on the domain `bluecore.gbanchs.com`. Here’s how to test the API on the real domain:
+
+1.3. **GET Request to Read the Counter**:
+   ```bash
+   curl http://bluecore.gbanchs.com/read
+   ```
+
+   Example Response:
+   ```json
+   {"counter": 0}
+   ```
+
+1.2. **POST Request to Increment the Counter**:
+   ```bash
+   curl -X POST http://bluecore.gbanchs.com/write
+   ```
+
+   Example Response:
+   ```json
+   {"counter": 1}
+   ```
+
 ---
 
 ## 2. Deploy the API on Kubernetes (Minikube)
