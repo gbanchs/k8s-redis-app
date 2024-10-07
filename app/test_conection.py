@@ -2,14 +2,22 @@ from rediscluster import RedisCluster
 import redis
 import logging
 
+
+
+redis_host = os.getenv("REDIS_HOST", "redis")
+redis_port = int(os.getenv("REDIS_PORT", 6379))
+redis_password = os.getenv("REDIS_PASSWORD")
+redis_user     = os.getenv("REDIS_USER", "curly")
+
+
 print("Testing Redis connection...")
 logging.info("Testing Redis connection...")
 # Redis connection details
-redis_host = 'clustercfg.redis-bluecore-demo.nk4pd1.usw2.cache.amazonaws.com'
+redis_host = redis_host
 redis_port = 6379
-redis_password = "27262633o~MPU1mzJAha7"#"8TqM3W9OagvI7a2mFwC9Gvmk"
+redis_password = redis_password
 redis_tls_ca_cert = '/app/AmazonRootCA1.pem'
-redis_user = "curly"
+redis_user = redis_user
 # Create SSL context
 # ssl_context = ssl.create_default_context(cafile=redis_tls_ca_cert)
 
