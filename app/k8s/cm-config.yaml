@@ -1,8 +1,7 @@
 apiVersion: v1
 data: 
-  NODE_ENV: ${NODE_ENV}
-  URL_INFLUX: ${URL_INFLUX}
+  ENV: ${ENV}
 kind: ConfigMap
 metadata:
-  name: ${APP_NAME}-config
+  name: ${APP_NAME}-${ENV}-config
   namespace: default
