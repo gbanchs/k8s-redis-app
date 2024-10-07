@@ -4,18 +4,15 @@ export VERSION="${BITBUCKET_BUILD_NUMBER}"
 export IMAGE_TAG="${BITBUCKET_BUILD_NUMBER}"
 export NODE_ENV=$NODE_ENV
 export ENV="${ENV}"
+export NAMESPACE="${NAMESPACE}"
 
-export APP_NAME="bluecore"
-export VERSION="111"
-export IMAGE_TAG="latest"
-export ENV="demo"
 
 
 if [ "$ENV" = "prod" ]; then
-    export DOMAIN_PREFIX="cloud"
-    export IMAGE_TAG="latest"
+    export DOMAIN="${APP_NAME}.gbanchs.com"
+
 else
-   export DOMAIN_PREFIX="${ENV}"
+   export DOMAIN="${ENV}.${APP_NAME}.gbanchs.com"
 fi
 
 

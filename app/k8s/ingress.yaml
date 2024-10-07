@@ -9,7 +9,7 @@ metadata:
     alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
     alb.ingress.kubernetes.io/healty-threshold-count: "2"
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 443}]'
-    alb.ingress.kubernetes.io/load-balancer-attributes: deletion_protection.enabled=false,idle_timeout.timeout_seconds=45
+    alb.ingress.kubernetes.io/load-balancer-attributes: deletion_protection.enabled=true,idle_timeout.timeout_seconds=45
     alb.ingress.kubernetes.io/load-balancer-name: ingress-${APP_NAME}-${ENV}
     alb.ingress.kubernetes.io/name: ingress-${APP_NAME}-${ENV}
     alb.ingress.kubernetes.io/scheme: internet-facing
@@ -28,7 +28,7 @@ spec:
         number: 80
   ingressClassName: alb
   rules:
-  - host: bluecore.gbanchs.com
+  - host: ${DOMAIN}
     http:
       paths:
       - backend:
@@ -38,7 +38,7 @@ spec:
               number: 80
         path: /read
         pathType: ImplementationSpecific
-  - host: bluecore.gbanchs.com
+  - host: ${DOMAIN}
     http:
       paths:
       - backend:

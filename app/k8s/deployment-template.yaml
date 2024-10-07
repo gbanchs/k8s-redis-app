@@ -5,7 +5,7 @@ metadata:
     app: ${APP_NAME}-${ENV}
     env: ${ENV}
   name: ${APP_NAME}-${ENV}
-  namespace: default
+  namespace: ${NAMESPAVCE}
 spec:
   progressDeadlineSeconds: 600
   replicas: 2
@@ -28,22 +28,22 @@ spec:
       # Uncomment and set the correct service account if needed
       serviceAccountName: sa-${APP_NAME}-${ENV}
       containers:
-      - image: 447335552551.dkr.ecr.us-west-2.amazonaws.com/ecr-redis-demo:${IMAGE_TAG}
+      - image: 447335552551.dkr.ecr.us-west-2.amazonaws.com/${APP_NAME}:${IMAGE_TAG}
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 3000
+        - containerPort: 8000
         readinessProbe:
           httpGet:
-            path: /api/v1/healthcheck
-            port: 3000
+            path: /healthz
+            port: 8000
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
           timeoutSeconds: 5
         livenessProbe:
           httpGet:
-            path: /api/v1/healthcheck
-            port: 3000
+            path: /healthz
+            port: 8000
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 10
@@ -54,7 +54,7 @@ spec:
             name: ${APP_NAME}-${ENV}-config
         env:
         - name: PORT
-          value: "3000"
+          value: "8000"
         resources:
           # Uncomment and set the appropriate resource requests and limits if needed
           requests:
@@ -63,44 +63,6 @@ spec:
           limits:
             memory: "400M"
             cpu: "500m"
-        volumeMounts:
-        - name: persistent-storage
-          mountPath: /usr/src/app/logCTXR
-        - name: secret-volume
-          mountPath: /usr/src/app/config/config.json
-          subPath: config.json
-        - name: keys-volume
-          mountPath: /usr/src/app/key
-          readOnly: true  
-        - name: envs-volume
-          mountPath: /usr/src/app/.env
-          subPath:  .env                 
-      volumes:
-      - name: persistent-storage
-        persistentVolumeClaim:
-          claimName: efs-claim
-      - name: secret-volume
-        secret:
-          secretName: db-config
-          items:
-          - key: config.json
-            path: config.json
-      - name: envs-volume
-        secret:
-          secretName: envs
-          items:
-          - key: .env
-            path: .env          
-      - name: keys-volume
-        secret:
-          secretName: keys
-          items:
-          - key: jwtRS256.key
-            path: jwtRS256.key
-          - key: jwtRS256.key.pub
-            path: jwtRS256.key.pub
-          - key: private.pem  
-            path: private.pem  
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -136,70 +98,3 @@ spec:
           value: 100
           periodSeconds: 15
   #https://overcast.blog/13-ways-to-optimize-kubernetes-horizontal-pod-autoscaler-bd5911683bb2
----
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: efs-sc
-provisioner: efs.csi.aws.com
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: efs-claim
-spec:
-  accessModes:
-  - ReadWriteMany
-  storageClassName: efs-sc
-  resources:
-    requests:
-      storage: ${EFS_FILESYSTEM_SIZE}
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: efs-pv
-spec:
-  capacity:
-    storage: ${EFS_FILESYSTEM_SIZE}
-  volumeMode: Filesystem
-  accessModes:
-  - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: efs-sc
-  csi:
-    driver: efs.csi.aws.com
-    volumeHandle: ${EFS_FILESYSTEM_ID}
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: zabbix-service
-  namespace: default
-spec:
-  type: ExternalName
-  externalName: zabbix-zabbix-web.monitoring.svc.cluster.local
-  ports:
-  - port: 80
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: influxdb
-  namespace: default
-spec:
-  selector: 
-    app: influxdb
-  type: ExternalName
-  externalName: influxdb.monitoring.svc.cluster.local
-  ports:
-  - name: api
-    port: 8086
-    protocol: TCP
-    targetPort: 8086
-  - name: rpc
-    port: 8088
-    protocol: TCP
-    targetPort: 8088
-
-
